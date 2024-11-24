@@ -15,7 +15,9 @@ const ZoneSlider = ({ zones, elementCounts, onButtonClick }) => {
               <p className="text-white">Descripción:</p>
               <div className="mt-2 flex flex-col items-end">
                 <span className="text-white">Volumen de plaga</span>
-                <span className="text-[#003600] text-2xl">{elementCounts[index]}</span>
+                <span className="text-[#003600] text-2xl">
+                  {elementCounts[index]?.Grasshopper || 0} {/* Mostrar el conteo de Grasshopper */}
+                </span>
               </div>
               <button
                 className="mt-auto bg-white text-black py-2 rounded"

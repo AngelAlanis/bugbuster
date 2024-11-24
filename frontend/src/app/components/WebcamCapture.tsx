@@ -8,7 +8,7 @@ const videoConstraints = {
   height: 720,
 };
 
-const WebcamCapture = ({ onUpdateElementCount }) => {
+const WebcamCapture = ({ onUpdateElementCount }: { onUpdateElementCount: (count: object) => void }) => {  
   const webcamRef = useRef<any>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [resultImage, setResultImage] = useState<string | null>(null); 
@@ -25,19 +25,21 @@ const WebcamCapture = ({ onUpdateElementCount }) => {
         formData.append("image", blob, "screenshot.jpg");
 
         try {
-          const apiResponse = await fetch("http://192.168.130.113:5000/analizar-imagen", {
+          const apiResponse = await fetch("http://192.168.1.2:5000/analizar-imagen", {
             method: "POST",
             body: formData,
           });
 
           if (apiResponse.ok) {
             const result = await apiResponse.json();
-            console.log("Análisis de la imagen:", result);
-
-            setResultImage(`data:image/jpeg;base64,${result.image_base64}`);
-
-            setElementCount(result.conteo_clases); 
-            onUpdateElementCount(result.conteo_clases); // Actualizar el conteo de elementos
+        
+            if (result.conteo_clases && result.image_base64) {
+              setResultImage(`data:image/jpeg;base64,${result.image_base64}`);
+              setElementCount(result.conteo_clases); // Actualiza `elementCount` con el objeto recibido
+              onUpdateElementCount(result.conteo_clases); // Llama a la prop para comunicar el conteo
+            } else {
+              console.error("Formato de respuesta inesperado:", result);
+            }
           } else {
             console.error("Error en la respuesta de la API:", apiResponse.statusText);
           }
@@ -51,11 +53,11 @@ const WebcamCapture = ({ onUpdateElementCount }) => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       if (webcamRef.current) {
-        sendImageToAPI(); 
+        sendImageToAPI();
       }
-    }, 3000); 
-
-    return () => clearInterval(intervalId); 
+    }, 3000);
+  
+    return () => clearInterval(intervalId); // Limpia el intervalo al desmontar el componente
   }, []);
 
   return (
@@ -95,7 +97,7 @@ const WebcamCapture = ({ onUpdateElementCount }) => {
         />
       )}
 
-      {elementCount !== null && (
+      {elementCount && (
         <div
           style={{
             position: "absolute",
@@ -108,8 +110,15 @@ const WebcamCapture = ({ onUpdateElementCount }) => {
             fontSize: "16px",
             zIndex: 10, 
           }}
-        >
-          Conteo de elementos: {elementCount}
+          >
+          <h4>Conteo de elementos:</h4>
+          <ul>
+            {Object.entries(elementCount).map(([key, value]) => (
+              <li key={key}>
+                {key}: {value}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

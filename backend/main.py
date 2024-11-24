@@ -15,7 +15,7 @@ API_KEY = 'API-KEY'
 
 app = Flask(__name__)
 
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Inicializar el cliente de inferencia
 def initialize_client(api_url, api_key):
