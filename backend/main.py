@@ -12,10 +12,17 @@ import json
 import serial,time
 
 API_KEY = 'API-KEY'
+MODEL_ID = 'chapulines/8'
+API_URL = 'https://detect.roboflow.com'
 
 app = Flask(__name__)
 
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+# Inicializar cliente de inferencia y conexión al Arduino
+client = InferenceHTTPClient(api_url=API_URL, api_key=API_KEY)
+arduino = serial.Serial("COM8", 9600)
+time.sleep(2)  # Asegurar que Arduino esté listo
 
 # Inicializar el cliente de inferencia
 def initialize_client(api_url, api_key):
@@ -25,7 +32,7 @@ def initialize_arduino(port, speed):
     return serial.Serial(port, speed)
 
 # Realizar la inferencia y obtener las predicciones
-def infer_image(client, image, model_id):
+def infer_image(image, model_id):
     # Guardar el fotograma temporalmente para la inferencia
     img_path = 'temp_frame.jpg'
     cv2.imwrite(img_path, image)
@@ -77,10 +84,9 @@ def draw_bounding_boxes(image, predictions):
     
     return detected_classes, image
 
-def send_arduino_signal(arduino,valor):
-    time.sleep(2)
-    arduino.write(f"{valor}\n".encode())
-    arduino.close()
+def send_arduino_signal(valor):
+    if arduino.is_open:
+        arduino.write(f"{valor}\n".encode())
 
 # Contar las clases detectadas
 def count_detected_classes(detected_classes):
@@ -109,12 +115,9 @@ def upload_image():
 
     print("Inicializadno cliente Roboflow")
 
-    # Inicializar cliente para la inferencia
-    client = initialize_client(api_url="https://detect.roboflow.com", api_key=API_KEY)
-
     print("Infiriendo imagen")
     # Inferir la imagen
-    predictions = infer_image(client, image, model_id="chapulines/8")
+    predictions = infer_image(image, model_id="chapulines/8")
 
     print("Dibujando bounding-boxes")
     # Dibujar los bounding boxes y obtener las clases detectadas
@@ -123,15 +126,13 @@ def upload_image():
     print("Contando clases")
     conteo_clases = count_detected_classes(detected_classes)
 
-        # Filtrar y contar cuántos "Grasshopper" hay
-    grasshopper_count = conteo_clases.get("Grasshopper", 0)
+    # Filtrar y contar cuántos "Grasshopper" hay
+    grasshopper_count = conteo_clases["Grasshopper"]
     
     # Enviar la cantidad de "Grasshopper" detectados al Arduino
     if grasshopper_count > 0:
         print(f"Enviando señal al Arduino con el conteo de 'Grasshopper': {grasshopper_count}")
-        arduino = initialize_arduino("COM8", 9600)
-        time.sleep(2)  # Esperar a que el puerto se inicialice
-        send_arduino_signal(arduino, grasshopper_count)
+        send_arduino_signal(grasshopper_count)
     else:
         print("No se detectaron 'Grasshopper', no se enviará señal al Arduino.")
     

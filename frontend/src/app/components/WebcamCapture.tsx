@@ -25,7 +25,7 @@ const WebcamCapture = ({ onUpdateElementCount }: { onUpdateElementCount: (count:
         formData.append("image", blob, "screenshot.jpg");
 
         try {
-          const apiResponse = await fetch("http://192.168.1.2:5000/analizar-imagen", {
+          const apiResponse = await fetch("http://127.0.0.1:5000/analizar-imagen", {
             method: "POST",
             body: formData,
           });
@@ -55,7 +55,7 @@ const WebcamCapture = ({ onUpdateElementCount }: { onUpdateElementCount: (count:
       if (webcamRef.current) {
         sendImageToAPI();
       }
-    }, 3000);
+    }, 1000);
   
     return () => clearInterval(intervalId); // Limpia el intervalo al desmontar el componente
   }, []);
